@@ -1,28 +1,29 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
+
+import { addState } from "@/services/masterData";
 
 interface StateData {
-  sNo: number
-  stateId: string
-  stateName: string
-  status?: string
+  id: string;
+  stateName: string;
+  status?: string;
 }
 
 export default function AddStateModal({
@@ -30,34 +31,55 @@ export default function AddStateModal({
   initialData = null,
   onSave,
 }: {
-  trigger?: React.ReactNode
-  initialData?: StateData | null
-  onSave?: (data: StateData) => void
+  trigger?: React.ReactNode;
+  initialData?: StateData | null;
+  onSave?: (data?: StateData) => void;
 }) {
-  const [open, setOpen] = React.useState(false)
-  const [focusedField, setFocusedField] = React.useState<string | null>(null)
-  const [stateName, setStateName] = React.useState(initialData?.stateName || "")
-  const [selectedStatus, setSelectedStatus] = React.useState(initialData?.status || "")
-  
-  const isEditMode = !!initialData
+  const [open, setOpen] = React.useState(false);
+  const [focusedField, setFocusedField] = React.useState<string | null>(null);
+  const [stateName, setStateName] = React.useState(
+    initialData?.stateName || "",
+  );
+  const [selectedStatus, setSelectedStatus] = React.useState(
+    initialData?.status || "",
+  );
+  const [loading, setLoading] = React.useState(false);
+
+  const isEditMode = !!initialData;
 
   React.useEffect(() => {
     if (initialData) {
-      setStateName(initialData.stateName)
-      setSelectedStatus(initialData.status || "")
+      setStateName(initialData.stateName);
+      setSelectedStatus(initialData.status || "");
+    } else {
+      setStateName("");
+      setSelectedStatus("");
     }
-  }, [initialData])
+  }, [initialData, open]);
 
-  const handleSave = () => {
-    if (onSave) {
-      onSave({
-        ...initialData,
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      const payload = {
+        id: initialData?.id || "",
         stateName,
         status: selectedStatus,
-      } as StateData)
+      };
+
+      if (!isEditMode) {
+        await addState(payload);
+      }
+
+      if (onSave) {
+        onSave(payload);
+      }
+      setOpen(false);
+    } catch (error) {
+      console.error("Failed to save state:", error);
+    } finally {
+      setLoading(false);
     }
-    setOpen(false)
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -113,15 +135,22 @@ export default function AddStateModal({
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button variant="outline" className="border-2" onClick={() => setOpen(false)}>
+            <Button
+              variant="outline"
+              className="border-2"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={handleSave} className="bg-[#F87B1B] hover:bg-[#f87b1b]/90 text-white">
+            <Button
+              onClick={handleSave}
+              className="bg-[#F87B1B] hover:bg-[#f87b1b]/90 text-white"
+            >
               {isEditMode ? "Update State" : "Add State"}
             </Button>
           </div>
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

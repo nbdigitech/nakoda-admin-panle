@@ -1,28 +1,29 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
+
+import { addInfluencerCategory } from "@/services/masterData";
 
 interface InfluencerCategoryData {
-  sNo: number
-  influencerId: string
-  categoryName: string
-  status?: string
+  id: string;
+  categoryName: string;
+  status?: string;
 }
 
 export default function AddInfluencerCategoryModal({
@@ -30,34 +31,55 @@ export default function AddInfluencerCategoryModal({
   initialData = null,
   onSave,
 }: {
-  trigger?: React.ReactNode
-  initialData?: InfluencerCategoryData | null
-  onSave?: (data: InfluencerCategoryData) => void
+  trigger?: React.ReactNode;
+  initialData?: InfluencerCategoryData | null;
+  onSave?: (data?: InfluencerCategoryData) => void;
 }) {
-  const [open, setOpen] = React.useState(false)
-  const [focusedField, setFocusedField] = React.useState<string | null>(null)
-  const [categoryName, setCategoryName] = React.useState(initialData?.categoryName || "")
-  const [selectedStatus, setSelectedStatus] = React.useState(initialData?.status || "")
+  const [open, setOpen] = React.useState(false);
+  const [focusedField, setFocusedField] = React.useState<string | null>(null);
+  const [categoryName, setCategoryName] = React.useState(
+    initialData?.categoryName || "",
+  );
+  const [selectedStatus, setSelectedStatus] = React.useState(
+    initialData?.status || "active",
+  );
+  const [loading, setLoading] = React.useState(false);
 
-  const isEditMode = !!initialData
+  const isEditMode = !!initialData;
 
   React.useEffect(() => {
     if (initialData) {
-      setCategoryName(initialData.categoryName)
-      setSelectedStatus(initialData.status || "")
+      setCategoryName(initialData.categoryName);
+      setSelectedStatus(initialData.status || "active");
+    } else {
+      setCategoryName("");
+      setSelectedStatus("active");
     }
-  }, [initialData])
+  }, [initialData, open]);
 
-  const handleSave = () => {
-    if (onSave) {
-      onSave({
-        ...initialData,
-        categoryName,
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      const payload = {
+        id: initialData?.id || "",
+        categoryName: categoryName,
         status: selectedStatus,
-      } as InfluencerCategoryData)
+      };
+
+      if (!isEditMode) {
+        await addInfluencerCategory(payload);
+      }
+
+      if (onSave) {
+        onSave(payload);
+      }
+      setOpen(false);
+    } catch (error) {
+      console.error("Failed to save influencer category:", error);
+    } finally {
+      setLoading(false);
     }
-    setOpen(false)
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -66,7 +88,9 @@ export default function AddInfluencerCategoryModal({
       <DialogContent className="max-w-2xl rounded-xl">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold">
-            {isEditMode ? "Edit Influencer Category" : "Add Influencer Category"}
+            {isEditMode
+              ? "Edit Influencer Category"
+              : "Add Influencer Category"}
           </DialogTitle>
         </DialogHeader>
 
@@ -75,7 +99,7 @@ export default function AddInfluencerCategoryModal({
             <div>
               <label
                 className={`text-xs font-semibold block mb-2 transition ${
-                  focusedField === "categoryName"
+                  focusedField === "influencerCategory"
                     ? "text-[#F87B1B]"
                     : "text-gray-700"
                 }`}
@@ -91,7 +115,7 @@ export default function AddInfluencerCategoryModal({
                     ? "!border-[#F87B1B]"
                     : "!border-gray-300"
                 }`}
-                onFocus={() => setFocusedField("categoryName")}
+                onFocus={() => setFocusedField("influencerCategory")}
                 onBlur={() => setFocusedField(null)}
               />
             </div>
@@ -113,15 +137,22 @@ export default function AddInfluencerCategoryModal({
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button variant="outline" className="border-2" onClick={() => setOpen(false)}>
+            <Button
+              variant="outline"
+              className="border-2"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={handleSave} className="bg-[#F87B1B] hover:bg-[#f87b1b]/90 text-white">
+            <Button
+              onClick={handleSave}
+              className="bg-[#F87B1B] hover:bg-[#f87b1b]/90 text-white"
+            >
               {isEditMode ? "Update Category" : "Add Category"}
             </Button>
           </div>
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

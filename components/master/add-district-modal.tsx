@@ -1,29 +1,31 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
+
+import { addDistrict } from "@/services/masterData";
+import { useMasterData } from "@/context/MasterDataContext";
 
 interface DistrictData {
-  sNo: number
-  districtId: string
-  districtName: string
-  stateName: string
-  status?: string
+  id: string;
+  districtName: string;
+  stateId: string;
+  status?: string;
 }
 
 export default function AddDistrictModal({
@@ -31,37 +33,62 @@ export default function AddDistrictModal({
   initialData = null,
   onSave,
 }: {
-  trigger?: React.ReactNode
-  initialData?: DistrictData | null
-  onSave?: (data: DistrictData) => void
+  trigger?: React.ReactNode;
+  initialData?: DistrictData | null;
+  onSave?: (data?: DistrictData) => void;
 }) {
-  const [open, setOpen] = React.useState(false)
-  const [focusedField, setFocusedField] = React.useState<string | null>(null)
-  const [selectedState, setSelectedState] = React.useState(initialData?.stateName || "")
-  const [districtName, setDistrictName] = React.useState(initialData?.districtName || "")
-  const [selectedStatus, setSelectedStatus] = React.useState(initialData?.status || "")
-  
-  const isEditMode = !!initialData
+  const [open, setOpen] = React.useState(false);
+  const [focusedField, setFocusedField] = React.useState<string | null>(null);
+  const [selectedState, setSelectedState] = React.useState(
+    initialData?.stateId || "",
+  );
+  const [districtName, setDistrictName] = React.useState(
+    initialData?.districtName || "",
+  );
+  const [selectedStatus, setSelectedStatus] = React.useState(
+    initialData?.status || "",
+  );
+  const { states } = useMasterData();
+  const [loading, setLoading] = React.useState(false);
+
+  const isEditMode = !!initialData;
 
   React.useEffect(() => {
     if (initialData) {
-      setSelectedState(initialData.stateName)
-      setDistrictName(initialData.districtName)
-      setSelectedStatus(initialData.status || "")
+      setSelectedState(initialData.stateId);
+      setDistrictName(initialData.districtName);
+      setSelectedStatus(initialData.status || "");
+    } else {
+      setSelectedState("");
+      setDistrictName("");
+      setSelectedStatus("");
     }
-  }, [initialData])
+  }, [initialData, open]);
 
-  const handleSave = () => {
-    if (onSave) {
-      onSave({
-        ...initialData,
-        stateName: selectedState,
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      const payload = {
+        id: initialData?.id || "",
+        stateId: selectedState,
         districtName,
         status: selectedStatus,
-      } as DistrictData)
+      };
+
+      if (!isEditMode) {
+        await addDistrict(payload);
+      }
+
+      if (onSave) {
+        onSave(payload);
+      }
+      setOpen(false);
+    } catch (error) {
+      console.error("Failed to save district:", error);
+    } finally {
+      setLoading(false);
     }
-    setOpen(false)
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -85,9 +112,11 @@ export default function AddDistrictModal({
                   <SelectValue placeholder="Select state" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="chhattisgarh">Chhattisgarh</SelectItem>
-                  <SelectItem value="madhya-pradesh">Madhya Pradesh</SelectItem>
-                  <SelectItem value="maharashtra">Maharashtra</SelectItem>
+                  {states.map((state) => (
+                    <SelectItem key={state.id} value={state.id}>
+                      {state.stateName}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -133,15 +162,22 @@ export default function AddDistrictModal({
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button variant="outline" className="border-2" onClick={() => setOpen(false)}>
+            <Button
+              variant="outline"
+              className="border-2"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={handleSave} className="bg-[#F87B1B] hover:bg-[#f87b1b]/90 text-white">
+            <Button
+              onClick={handleSave}
+              className="bg-[#F87B1B] hover:bg-[#f87b1b]/90 text-white"
+            >
               {isEditMode ? "Update District" : "Add District"}
             </Button>
           </div>
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

@@ -1,30 +1,32 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
+
+import { addCity } from "@/services/masterData";
+import { useMasterData } from "@/context/MasterDataContext";
 
 interface CityVillageData {
-  sNo: number
-  cvId: string
-  cityVillage: string
-  district: string
-  state: string
-  status?: string
+  id: string;
+  cityName: string;
+  districtId: string;
+  stateName: string;
+  status?: string;
 }
 
 export default function AddCityVillageModal({
@@ -32,40 +34,66 @@ export default function AddCityVillageModal({
   initialData = null,
   onSave,
 }: {
-  trigger?: React.ReactNode
-  initialData?: CityVillageData | null
-  onSave?: (data: CityVillageData) => void
+  trigger?: React.ReactNode;
+  initialData?: CityVillageData | null;
+  onSave?: (data?: CityVillageData) => void;
 }) {
-  const [open, setOpen] = React.useState(false)
-  const [focusedField, setFocusedField] = React.useState<string | null>(null)
-  const [selectedState, setSelectedState] = React.useState(initialData?.state || "")
-  const [selectedDistrict, setSelectedDistrict] = React.useState(initialData?.district || "")
-  const [cityVillage, setCityVillage] = React.useState(initialData?.cityVillage || "")
-  const [selectedStatus, setSelectedStatus] = React.useState(initialData?.status || "")
+  const [open, setOpen] = React.useState(false);
+  const [focusedField, setFocusedField] = React.useState<string | null>(null);
+  const [selectedState, setSelectedState] = React.useState(
+    initialData?.stateName || "",
+  );
+  const [selectedDistrict, setSelectedDistrict] = React.useState(
+    initialData?.districtId || "",
+  );
+  const [cityName, setCityName] = React.useState(initialData?.cityName || "");
+  const [selectedStatus, setSelectedStatus] = React.useState(
+    initialData?.status || "active",
+  );
+  const { states, districts } = useMasterData();
+  const [loading, setLoading] = React.useState(false);
 
-  const isEditMode = !!initialData
+  const isEditMode = !!initialData;
 
   React.useEffect(() => {
     if (initialData) {
-      setSelectedState(initialData.state)
-      setSelectedDistrict(initialData.district)
-      setCityVillage(initialData.cityVillage)
-      setSelectedStatus(initialData.status || "")
+      setSelectedState(initialData.stateName);
+      setSelectedDistrict(initialData.districtId);
+      setCityName(initialData.cityName);
+      setSelectedStatus(initialData.status || "active");
+    } else {
+      setSelectedState("");
+      setSelectedDistrict("");
+      setCityName("");
+      setSelectedStatus("active");
     }
-  }, [initialData])
+  }, [initialData, open]);
 
-  const handleSave = () => {
-    if (onSave) {
-      onSave({
-        ...initialData,
-        state: selectedState,
-        district: selectedDistrict,
-        cityVillage,
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      const payload = {
+        id: initialData?.id || "",
+        stateName: selectedState,
+        districtId: selectedDistrict,
+        cityName,
         status: selectedStatus,
-      } as CityVillageData)
+      };
+
+      if (!isEditMode) {
+        await addCity(payload);
+      }
+
+      if (onSave) {
+        onSave(payload);
+      }
+      setOpen(false);
+    } catch (error) {
+      console.error("Failed to save city:", error);
+    } finally {
+      setLoading(false);
     }
-    setOpen(false)
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -80,18 +108,45 @@ export default function AddCityVillageModal({
 
         <div className="space-y-6 py-4">
           <div className="space-y-4">
-            
+            <div>
+              <label className="text-xs font-semibold block mb-2 text-gray-700">
+                Select State
+              </label>
+              <Select value={selectedState} onValueChange={setSelectedState}>
+                <SelectTrigger className="w-full border-2 !border-gray-300">
+                  <SelectValue placeholder="Select state" />
+                </SelectTrigger>
+                <SelectContent>
+                  {states.map((state) => (
+                    <SelectItem key={state.id} value={state.stateName}>
+                      {state.stateName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <label className="text-xs font-semibold block mb-2 text-gray-700">
                 Select District
               </label>
-              <Select value={selectedDistrict} onValueChange={setSelectedDistrict}>
+              <Select
+                value={selectedDistrict}
+                onValueChange={setSelectedDistrict}
+              >
                 <SelectTrigger className="w-full border-2 !border-gray-300">
                   <SelectValue placeholder="Select district" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="raipur">Raipur</SelectItem>
-                  <SelectItem value="bilaspur">Bilaspur</SelectItem>
+                  {districts
+                    .filter(
+                      (d) => !selectedState || d.stateName === selectedState,
+                    )
+                    .map((district) => (
+                      <SelectItem key={district.id} value={district.id}>
+                        {district.districtName}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -99,7 +154,7 @@ export default function AddCityVillageModal({
             <div>
               <label
                 className={`text-xs font-semibold block mb-2 transition ${
-                  focusedField === "cityVillage"
+                  focusedField === "cityName"
                     ? "text-[#F87B1B]"
                     : "text-gray-700"
                 }`}
@@ -108,14 +163,14 @@ export default function AddCityVillageModal({
               </label>
               <Input
                 placeholder="Enter city/village name"
-                value={cityVillage}
-                onChange={(e) => setCityVillage(e.target.value)}
+                value={cityName}
+                onChange={(e) => setCityName(e.target.value)}
                 className={`w-full border-2 transition ${
-                  focusedField === "cityVillage"
+                  focusedField === "cityName"
                     ? "!border-[#F87B1B]"
                     : "!border-gray-300"
                 }`}
-                onFocus={() => setFocusedField("cityVillage")}
+                onFocus={() => setFocusedField("cityName")}
                 onBlur={() => setFocusedField(null)}
               />
             </div>
@@ -137,15 +192,22 @@ export default function AddCityVillageModal({
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button variant="outline" className="border-2" onClick={() => setOpen(false)}>
+            <Button
+              variant="outline"
+              className="border-2"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={handleSave} className="bg-[#F87B1B] hover:bg-[#f87b1b]/90 text-white">
+            <Button
+              onClick={handleSave}
+              className="bg-[#F87B1B] hover:bg-[#f87b1b]/90 text-white"
+            >
               {isEditMode ? "Update City/Village" : "Add City/Village"}
             </Button>
           </div>
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

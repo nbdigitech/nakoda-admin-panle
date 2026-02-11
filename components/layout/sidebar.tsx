@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { usePathname, useRouter } from "next/navigation"
+import * as React from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   BarChart3,
@@ -19,22 +19,22 @@ import {
   ChevronDown,
   Bell,
   Mail,
-} from "lucide-react"
+} from "lucide-react";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { signOut } from "firebase/auth"
-import { getFirebaseAuth } from "@/firebase"
+} from "@/components/ui/collapsible";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { signOut } from "firebase/auth";
+import { getFirebaseAuth } from "@/firebase";
 
 interface SidebarItem {
-  label: string
-  href: string
-  icon: React.ReactNode
+  label: string;
+  href: string;
+  icon: React.ReactNode;
 }
 
 const dashboardDropdownItems: SidebarItem[] = [
@@ -43,41 +43,40 @@ const dashboardDropdownItems: SidebarItem[] = [
   { label: "Sub Dealer", href: "/sub-dealer", icon: <UserPlus size={16} /> },
   { label: "Staff", href: "/staff", icon: <Users size={16} /> },
   { label: "Permission", href: "/permission", icon: <ShieldCheck size={16} /> },
-]
+];
 
 const managementItems: SidebarItem[] = [
   { label: "Manage Order", href: "/manage-order", icon: <Package size={16} /> },
-  { label: "Order History", href: "/order-history", icon: <History size={16} /> },
+  {
+    label: "Order History",
+    href: "/order-history",
+    icon: <History size={16} />,
+  },
   { label: "AI Chat Bot", href: "/chatbot", icon: <Bot size={16} /> },
   { label: "Master", href: "/master", icon: <Database size={16} /> },
   { label: "Rewards", href: "/rewards", icon: <Trophy size={16} /> },
-  { label: "ASM Survey", href: "/asm-survey", icon: <Trophy size={16} /> },
-
-]
+];
 
 export default function Sidebar() {
-  const pathname = usePathname()
-  const router = useRouter()
-  const [dashboardOpen, setDashboardOpen] = React.useState(true)
+  const pathname = usePathname();
+  const router = useRouter();
+  const [dashboardOpen, setDashboardOpen] = React.useState(true);
 
   const handleLogout = async () => {
     try {
       await signOut(getFirebaseAuth());
-      router.push('/login');
+      router.push("/login");
     } catch (err) {
-      console.error('Logout failed', err);
+      console.error("Logout failed", err);
     }
-  }
+  };
 
   const isDashboardActive =
     pathname === "/dashboard" ||
-    dashboardDropdownItems.some((item) =>
-      pathname.startsWith(item.href)
-    )
+    dashboardDropdownItems.some((item) => pathname.startsWith(item.href));
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-56 bg-white border-r">
-
       {/* Logo */}
       <div className="h-20 flex items-center justify-center border-b px-2">
         <Image
@@ -91,7 +90,7 @@ export default function Sidebar() {
 
       {/* New Dealer */}
       <div className="px-4 py-3.5">
-        <Link href="/add-dealer" >
+        <Link href="/add-dealer">
           <Button className="w-full h-10 bg-[#F87B1B] hover:bg-[#e86f12] text-white rounded-xl">
             + New Dealer
           </Button>
@@ -99,7 +98,6 @@ export default function Sidebar() {
       </div>
 
       <ScrollArea className=" mt-4 h-[calc(100vh-160px)] px-3">
-
         {/* Dashboard */}
         <Collapsible open={dashboardOpen} onOpenChange={setDashboardOpen}>
           <CollapsibleTrigger asChild>
@@ -110,10 +108,13 @@ export default function Sidebar() {
                   : "text-gray-500 hover:bg-gray-100"
               }`}
             >
-              <Link href="/dashboard" className="flex items-center gap-2 text-sm font-medium">
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-2 text-sm font-medium"
+              >
                 <LayoutDashboard size={18} />
                 Dashboard
-              </Link >
+              </Link>
               <ChevronDown
                 size={16}
                 className={`transition ${dashboardOpen ? "rotate-180" : ""}`}
@@ -167,5 +168,5 @@ export default function Sidebar() {
         </div>
       </ScrollArea>
     </aside>
-  )
+  );
 }
